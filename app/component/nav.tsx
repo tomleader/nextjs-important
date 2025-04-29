@@ -1,0 +1,12 @@
+
+import Link from 'next/link'
+
+export default function Nav() {
+  return (
+    <div className="nav">
+      <Link href="./ssr">SSR 页面</Link>
+      <Link href="./ssg">SSG 页面</Link>
+      <Link href="./isr">ISR 页面</Link>
+    </div>
+    )
+}
