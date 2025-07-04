@@ -5,124 +5,181 @@ import Nav from '../component/nav'
 import { headers } from 'next/headers';
 
 export default async function Page() {
+
   const now = new Date().toISOString();
   headers(); // 调用 headers()，告诉 Next.js 这个页面是动态的（每次请求重新渲染）
+  
+  type Result = { desc: string; output: string; explain: string };
+  const results: Result[] = [];
 
-  const results = [];
-
-  const test = async (desc, fn) => {
+  const test = async (desc: string, fn: () => any | Promise<any>, explain: string) => {
     try {
       const result = await fn();
-      const output = typeof result === 'string'
-        ? result
-        : JSON.stringify(result);
-      results.push({ desc, output: output.slice(0, 200) });
+      const output = typeof result === 'string' ? result : JSON.stringify(result);
+      results.push({ desc, output: output.slice(0, 200), explain });
     } catch (e: any) {
-      results.push({ desc, output: 'Error: ' + e.message });
+      results.push({ desc, output: 'Error: ' + e.message, explain });
     }
   };
 
-    // ✅ 原基础测试项
-  await test('读取根目录 (fs)', () => {
-    const fs = require('fs');
-    return fs.readdirSync('/').join(', ');
-  });
+  // ================== 测试用例 ==================
 
-  await test('执行 echo 命令 (child_process)', () => {
-    const cp = require('child_process');
-    return cp.execSync('echo hello').toString();
-  });
+  // 1. 文件系统相关 - 判断能否访问宿主文件
+  await test(
+    '读取根目录 (fs)',
+    () => {
+      const fs = require('fs');
+      return fs.readdirSync('/').join(', ');
+    },
+    '检测文件系统访问权限，攻击者可能通过读取敏感文件收集信息。'
+  );
 
-  await test('发起 HTTP 请求 (https)', () => {
-    return new Promise((resolve) => {
-      const https = require('https');
-      https.get('https://example.com', res => {
-        resolve(`响应码: ${res.statusCode}`);
-      }).on('error', err => {
-        resolve('请求失败: ' + err.message);
-      });
-    });
-  });
+  await test(
+    '读取 /proc/self/cmdline',
+    () => {
+      const fs = require('fs');
+      return fs.readFileSync('/proc/self/cmdline').toString();
+    },
+    '检测容器进程信息，判断宿主环境及逃逸路径。'
+  );
 
-  await test('获取主机名 (os.hostname)', () => {
-    const os = require('os');
-    return os.hostname();
-  });
+  // 2. 子进程执行相关
+  await test(
+    '执行简单命令 (child_process.execSync)',
+    () => {
+      const cp = require('child_process');
+      return cp.execSync('echo hello').toString();
+    },
+    '检测是否能执行系统命令，攻击者可能执行任意命令。'
+  );
 
-  await test('VM 动态执行 (vm)', () => {
-    const vm = require('vm');
-    return vm.runInNewContext('2 + 3');
-  });
+  // 3. 网络相关 - TCP连接和监听测试
+  await test(
+    '发起 TCP 连接 example.com:80 (net)',
+    () =>
+      new Promise((resolve) => {
+        const net = require('net');
+        const socket = net.createConnection(80, 'example.com');
+        socket.on('connect', () => {
+          socket.end();
+          resolve('连接成功');
+        });
+        socket.on('error', (e: Error) => {
+          resolve('连接失败: ' + e.message);
+        });
+      }),
+    '检测是否允许出站 TCP 连接，攻击者可用作外部通信或数据泄露。'
+  );
 
-  // ⚠️ 沙箱边界测试项
+  await test(
+    '尝试监听本地端口 (net.createServer)',
+    () =>
+      new Promise((resolve) => {
+        const net = require('net');
+        const server = net.createServer();
+        server.listen(3333);
+        server.on('listening', () => {
+          server.close();
+          resolve('监听成功');
+        });
+        server.on('error', (e: Error) => {
+          resolve('监听失败: ' + e.message);
+        });
+      }),
+    '检测是否允许监听端口，监听一般在函数沙箱中被禁止，防止端口冲突及逃逸。'
+  );
 
-  await test('尝试监听端口 (net)', () => {
-    return new Promise((resolve) => {
-      const net = require('net');
-      const server = net.createServer();
-      server.listen(3333);
-      server.on('listening', () => {
-        server.close();
-        resolve('监听成功');
-      });
-      server.on('error', (e: Error) => {
-        resolve('监听失败: ' + e.message);
-      });
-    });
-  });
+  // 4. UDP socket 发送测试
+  await test(
+    'UDP socket 本地发送 (dgram)',
+    () =>
+      new Promise((resolve) => {
+        const dgram = require('dgram');
+        const socket = dgram.createSocket('udp4');
+        socket.send('ping', 41234, '127.0.0.1', (err: any) => {
+          socket.close();
+          resolve(err ? '发送失败: ' + err.message : '发送成功');
+        });
+      }),
+    '测试是否能发UDP包，攻击者可能利用UDP进行DDoS或数据外泄。'
+  );
 
-  await test('访问内网元数据服务 (169.254.169.254)', () => {
-    return new Promise((resolve) => {
-      const http = require('http');
-      const req = http.get('http://169.254.169.254', res => {
-        resolve('状态码: ' + res.statusCode);
-      });
-      req.on('error', err => {
-        resolve('失败: ' + err.message);
-      });
-      req.setTimeout(1000, () => {
-        req.destroy();
-        resolve('超时');
-      });
-    });
-  });
+  // 5. HTTP/HTTPS 请求测试（包括访问内网元数据）
+  await test(
+    'HTTPS 请求 https://example.com',
+    () =>
+      new Promise((resolve) => {
+        const https = require('https');
+        https
+          .get('https://example.com', (res) => {
+            resolve(`响应码: ${res.statusCode}`);
+          })
+          .on('error', (e: any) => {
+            resolve('请求失败: ' + e.message);
+          });
+      }),
+    '检测是否能正常访问公网HTTPS，函数访问外网是常见需求。'
+  );
 
-  await test('读取 /proc/self/cmdline', () => {
-    const fs = require('fs');
-    return fs.readFileSync('/proc/self/cmdline').toString();
-  });
+  await test(
+    'HTTP 请求内网元数据 http://169.254.169.254',
+    () =>
+      new Promise((resolve) => {
+        const http = require('http');
+        const req = http.get('http://169.254.169.254', (res) => {
+          resolve('状态码: ' + res.statusCode);
+        });
+        req.on('error', (e) => {
+          resolve('失败或被阻断: ' + e.message);
+        });
+        req.setTimeout(1500, () => {
+          req.destroy();
+          resolve('超时或被阻断');
+        });
+      }),
+    '检测是否能访问云内网元数据，防止云平台SSRF攻击。'
+  );
 
-  await test('ENV 环境变量泄露', () => {
-    return Object.keys(process.env).slice(0, 5).map(k => `${k}=${process.env[k]}`).join('\n');
-  });
+  // 6. 环境变量泄露测试
+  await test(
+    '读取环境变量（前5项）',
+    () => Object.entries(process.env).slice(0, 5).map(([k, v]) => `${k}=${v}`).join('\n'),
+    '检测是否暴露敏感环境变量，防止凭证泄露。'
+  );
 
-  await test('执行死循环子进程', () => {
-    const cp = require('child_process');
-    cp.spawn('node', ['-e', 'while(true){}']);
-    return '尝试执行';
-  });
+  // 7. vm模块动态执行测试（注入 require）
+  await test(
+    'vm.runInContext 调用 require',
+    () => {
+      const vm = require('vm');
+      const context = { require };
+      vm.createContext(context);
+      return vm.runInContext("require('os').platform()", context);
+    },
+    '检测是否允许通过 vm 绕过限制动态加载模块。'
+  );
 
-  await test('动态 VM 调用 require', () => {
-    const vm = require('vm');
-    return vm.runInNewContext("require('os').platform()");
-  });
+  // 8. Module.createRequire 绕过检测
+  await test(
+    'Module.createRequire 动态加载模块',
+    () => {
+      const Module = require('module');
+      const r = Module.createRequire(__filename);
+      return typeof r('fs').readFileSync;
+    },
+    '检测是否能绕过静态分析引入模块，增加攻击面。'
+  );
 
-  await test('创建 UDP socket 并发送', () => {
-    return new Promise((resolve) => {
-      const dgram = require('dgram');
-      const socket = dgram.createSocket('udp4');
-      socket.send('hi', 41234, '127.0.0.1', (err: any) => {
-        socket.close();
-        resolve(err ? '发送失败: ' + err.message : '发送成功');
-      });
-    });
-  });
+  // 9. 容器信息探测
+  await test(
+    '获取主机名 (os.hostname)',
+    () => {
+      const os = require('os');
+      return os.hostname();
+    },
+    '探测宿主环境，收集信息。'
+  );
 
-  await test('Module.createRequire 绕过 require', () => {
-    const Module = require('module');
-    const r = Module.createRequire(__filename);
-    return typeof r('fs').readFileSync;
-  });
 
   return (
     <div>
@@ -133,22 +190,24 @@ export default async function Page() {
 
       <div style={{ padding: '2em', fontFamily: 'sans-serif' }}>
       <h2>沙箱可访问模块输出检查</h2>
-      <table border="1" cellPadding="8" cellSpacing="0">
-        <thead>
-          <tr>
-            <th>测试项</th>
-            <th>输出或错误</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((r, i) => (
-            <tr key={i}>
-              <td>{r.desc}</td>
-              <td><pre style={{ margin: 0 }}>{r.output}</pre></td>
+      <table>
+          <thead>
+            <tr>
+              <th>测试项</th>
+              <th>说明</th>
+              <th>测试结果（最大200字符）</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {results.map(({ desc, output, explain }, i) => (
+              <tr key={i}>
+                <td>{desc}</td>
+                <td className="explain">{explain}</td>
+                <td><pre>{output}</pre></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
     </div>
       
     </div>
