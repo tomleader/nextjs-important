@@ -16,7 +16,7 @@ export default async function Page() {
     try {
       const result = await fn();
       const output = typeof result === 'string' ? result : JSON.stringify(result);
-      results.push({ desc, output: output.slice(0, 200), explain });
+      results.push({ desc, output: output.slice(0, 400), explain });
     } catch (e: any) {
       results.push({ desc, output: 'Error: ' + e.message, explain });
     }
@@ -125,7 +125,7 @@ export default async function Page() {
 
   // 6. 环境变量泄露测试
   await test(
-    '读取环境变量（前15项）',
+    '读取环境变量',
     () => Object.entries(process.env).slice(0, 15).map(([k, v]) => `${k}=${v}`).join('\n'),
     '检测是否暴露敏感环境变量，防止凭证泄露。'
   );
@@ -165,7 +165,6 @@ export default async function Page() {
           <thead>
             <tr>
               <th>测试项</th>
-              <th>说明</th>
               <th>测试结果（最大200字符）</th>
             </tr>
           </thead>
