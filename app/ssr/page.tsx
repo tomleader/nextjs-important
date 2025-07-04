@@ -103,11 +103,12 @@ export default function Page() {
             </tr>
           </thead>
           <tbody>
-            ${results.map(r => `
-              <tr>
-                <td>${r.desc}</td>
-                <td style="color:${r.status === 'PASS' ? 'green' : 'red'}">${r.status}</td>
-              </tr>`).join('')}
+            {results.map((r, index) => (
+              <tr key={index}>
+                <td>{r.desc}</td>
+                <td style={{ color: r.status === 'PASS' ? 'green' : 'red' }}>{r.status}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
