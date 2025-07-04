@@ -89,6 +89,27 @@ export default async function Page() {
     '检测是否允许监听端口，监听一般在函数沙箱中被禁止，防止端口冲突及逃逸。'
   );
 
+  await test('是否能自己连接自己监听的端口', () => {
+    return new Promise((resolve) => {
+      const net = require('net');
+      const server = net.createServer();
+      server.listen(9999, '127.0.0.1', () => {
+        const client = net.createConnection(9999, '127.0.0.1');
+        client.on('connect', () => {
+          server.close();
+          resolve('连接成功（本地）');
+        });
+        client.on('error', (e) => {
+          server.close();
+          resolve('连接失败: ' + e.message);
+        });
+      });
+      server.on('error', (e) => {
+        resolve('监听失败: ' + e.message);
+      });
+    });
+  });
+
   // 4. UDP socket 发送测试
   await test(
     'UDP socket 本地发送 (dgram)',
