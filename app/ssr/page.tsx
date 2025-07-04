@@ -104,23 +104,6 @@ export default async function Page() {
     '测试是否能发UDP包，攻击者可能利用UDP进行DDoS或数据外泄。'
   );
 
-  // 5. HTTP/HTTPS 请求测试（包括访问内网元数据）
-  await test(
-    'HTTPS 请求 https://example.com',
-    () =>
-      new Promise((resolve) => {
-        const https = require('https');
-        https
-          .get('https://example.com', (res) => {
-            resolve(`响应码: ${res.statusCode}`);
-          })
-          .on('error', (e: any) => {
-            resolve('请求失败: ' + e.message);
-          });
-      }),
-    '检测是否能正常访问公网HTTPS，函数访问外网是常见需求。'
-  );
-
   await test(
     'HTTP 请求内网元数据 http://169.254.169.254',
     () =>
@@ -142,21 +125,9 @@ export default async function Page() {
 
   // 6. 环境变量泄露测试
   await test(
-    '读取环境变量（前5项）',
-    () => Object.entries(process.env).slice(0, 5).map(([k, v]) => `${k}=${v}`).join('\n'),
+    '读取环境变量（前15项）',
+    () => Object.entries(process.env).slice(0, 15).map(([k, v]) => `${k}=${v}`).join('\n'),
     '检测是否暴露敏感环境变量，防止凭证泄露。'
-  );
-
-  // 7. vm模块动态执行测试（注入 require）
-  await test(
-    'vm.runInContext 调用 require',
-    () => {
-      const vm = require('vm');
-      const context = { require };
-      vm.createContext(context);
-      return vm.runInContext("require('os').platform()", context);
-    },
-    '检测是否允许通过 vm 绕过限制动态加载模块。'
   );
 
   // 8. Module.createRequire 绕过检测
@@ -202,7 +173,6 @@ export default async function Page() {
             {results.map(({ desc, output, explain }, i) => (
               <tr key={i}>
                 <td>{desc}</td>
-                <td className="explain">{explain}</td>
                 <td><pre>{output}</pre></td>
               </tr>
             ))}
