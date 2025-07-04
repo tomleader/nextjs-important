@@ -93,7 +93,7 @@ export default function Page() {
       <p>每次请求都会服务端重新渲染。</p>
       <p>生成时间: {now}</p>
 
-      <div style="font-family: sans-serif; line-height: 1.6;">
+      <div>
         <h2>Node.js 沙箱安全测试结果</h2>
         <table border="1" cellpadding="8" cellspacing="0">
           <thead>
