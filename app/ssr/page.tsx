@@ -165,7 +165,7 @@ export default async function Page() {
           <thead>
             <tr>
               <th>测试项</th>
-              <th>测试结果（最大200字符）</th>
+              <th>测试结果</th>
             </tr>
           </thead>
           <tbody>
