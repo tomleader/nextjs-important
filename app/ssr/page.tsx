@@ -8,11 +8,11 @@ export default function Page() {
   const now = new Date().toISOString();
   headers(); // 调用 headers()，告诉 Next.js 这个页面是动态的（每次请求重新渲染）
 
-  var results = [];
+  const results: { desc: string; status: 'PASS' | 'FAIL' }[] = [];
 
-  const test = (desc, fn) => {
+  const test = async (desc: string, fn: () => any | Promise<any>) => {
     try {
-      fn();
+      await fn();
       results.push({ desc, status: 'FAIL' });
     } catch {
       results.push({ desc, status: 'PASS' });
