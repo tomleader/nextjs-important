@@ -8,7 +8,7 @@ export default function Page() {
   const now = new Date().toISOString();
   headers(); // 调用 headers()，告诉 Next.js 这个页面是动态的（每次请求重新渲染）
 
-  const results = [];
+  var results = [];
 
   const test = (desc, fn) => {
     try {
