@@ -83,7 +83,7 @@ export default function Page() {
 
   // 模块缓存修改
   test('Modifying require.cache should not be allowed', () => {
-    require.cache[require.resolve('path')] = null;
+    delete require.cache[require.resolve('path')];
   });
 
   return (
