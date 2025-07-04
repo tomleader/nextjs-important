@@ -13,15 +13,16 @@ export default async function Page() {
   const test = async (desc, fn) => {
     try {
       const result = await fn();
-      const output =
-        typeof result === 'string'
-          ? result
-          : JSON.stringify(result, null, 2);
-      results.push({ desc, output: output.slice(0, 100) });
-    } catch (e) {
+      const output = typeof result === 'string'
+        ? result
+        : JSON.stringify(result);
+      results.push({ desc, output: output.slice(0, 120) });
+    } catch (e: any) {
       results.push({ desc, output: 'Error: ' + e.message });
     }
   };
+
+  // ------------------- 测试用例 --------------------
 
   await test('读取根目录 (fs)', () => {
     const fs = require('fs');
@@ -39,32 +40,45 @@ export default async function Page() {
     return cp.execSync('echo hello').toString();
   });
 
-  await test('创建 TCP 连接 (net)', () => {
-    const net = require('net');
-    net.createConnection({ port: 80, host: 'example.com' });
-    return 'net.createConnection created';
+  await test('TCP 连接 example.com:80 (net)', () => {
+    return new Promise((resolve) => {
+      const net = require('net');
+      const socket = net.createConnection(80, 'example.com');
+      socket.on('connect', () => {
+        socket.end();
+        resolve('连接成功');
+      });
+      socket.on('error', (e: Error) => {
+        resolve('连接失败: ' + e.message);
+      });
+    });
   });
 
-  await test('创建 UDP socket (dgram)', () => {
-    const dgram = require('dgram');
-    dgram.createSocket('udp4');
-    return 'dgram socket created';
+  await test('UDP socket 发送 (dgram)', () => {
+    return new Promise((resolve) => {
+      const dgram = require('dgram');
+      const socket = dgram.createSocket('udp4');
+      socket.send('ping', 41234, '127.0.0.1', (err: any) => {
+        socket.close();
+        resolve(err ? '发送失败: ' + err.message : '发送成功（本地）');
+      });
+    });
   });
 
-  await test('获取主机名 (os)', () => {
+  await test('GET 请求 example.com (https)', () => {
+    return new Promise((resolve) => {
+      const https = require('https');
+      https.get('https://example.com', (res: any) => {
+        resolve(`响应码: ${res.statusCode}`);
+      }).on('error', (e: any) => {
+        resolve('请求失败: ' + e.message);
+      });
+    });
+  });
+
+  await test('主机名 (os)', () => {
     const os = require('os');
     return os.hostname();
-  });
-
-  await test('检查是否 tty (tty)', () => {
-    const tty = require('tty');
-    return typeof tty.isatty;
-  });
-
-  await test('使用 Module.createRequire', () => {
-    const Module = require('module');
-    const r = Module.createRequire(__filename);
-    return typeof r('fs').readdirSync;
   });
 
   await test('vm.runInThisContext', () => {
@@ -72,13 +86,19 @@ export default async function Page() {
     return vm.runInThisContext('1 + 2');
   });
 
+  await test('Module.createRequire', () => {
+    const Module = require('module');
+    const r = Module.createRequire(__filename);
+    return typeof r('fs').readdirSync;
+  });
+
   await test('process.cwd()', () => {
     return process.cwd();
   });
 
-  await test('修改 require.cache', () => {
+  await test('require.cache 删除', () => {
     delete require.cache[require.resolve('path')];
-    return 'cache deleted';
+    return '已删除缓存';
   });
 
   return (
