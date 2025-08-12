@@ -5,17 +5,24 @@ async function getData() {
 
   let edgeMSg = '', nodeMsg = '', errMsg;
 
-  await Promise.all([
-    fetch('/api/edge').then(res => res.text()),
-    fetch('/api/node').then(res => res.text())
-  ])
-  .then(([data1, data2]) => {
-    edgeMSg = data1
-    nodeMsg = data2
-  })
-  .catch((e) => {
-    errMsg = JSON.stringify(e)
-  });
+  try {
+    const [data1, data2] = await Promise.all([
+      fetch('/api/edge').then(res => {
+        if (!res.ok) throw new Error(`Edge request failed with status: ${res.status}`);
+        return res.text();  
+      }),
+      fetch('/api/node').then(res => {
+        if (!res.ok) throw new Error(`Node request failed with status: ${res.status}`);
+        return res.text(); 
+      })
+    ]);
+
+    edgeMSg = data1;
+    nodeMsg = data2;
+
+  } catch (error) {
+    errMsg = JSON.stringify(error)
+  }
 
   return { edgeMSg, nodeMsg, errMsg }
 }
