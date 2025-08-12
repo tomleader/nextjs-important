@@ -6,8 +6,8 @@ async function getData() {
   let edgeMSg = '', nodeMsg = '';
 
   await Promise.all([
-    fetch('/api/edge').then(res => res),
-    fetch('/api/node').then(res => res)
+    fetch('/api/edge').then(res => res.text()),
+    fetch('/api/node').then(res => res.text())
   ])
   .then(([data1, data2]) => {
     edgeMSg = data1
