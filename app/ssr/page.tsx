@@ -104,25 +104,6 @@ export default async function Page() {
     '测试是否能发UDP包，攻击者可能利用UDP进行DDoS或数据外泄。'
   );
 
-  await test(
-    'HTTP 请求内网元数据 http://169.254.169.254',
-    () =>
-      new Promise((resolve) => {
-        const http = require('http');
-        const req = http.get('http://169.254.169.254', (res) => {
-          resolve('状态码: ' + res.statusCode);
-        });
-        req.on('error', (e) => {
-          resolve('失败或被阻断: ' + e.message);
-        });
-        req.setTimeout(1500, () => {
-          req.destroy();
-          resolve('超时或被阻断');
-        });
-      }),
-    '检测是否能访问云内网元数据，防止云平台SSRF攻击。'
-  );
-
   // 6. 环境变量泄露测试
   await test(
     '读取环境变量',
