@@ -129,7 +129,7 @@ export default async function Page() {
       const os = require('os');
       return os.hostname();
     },
-    '探测宿主环境，收集信息。'
+    '探测宿主环境，收集信息'
   );
 
 
