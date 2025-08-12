@@ -3,7 +3,7 @@ import Nav from '../component/nav'
 
 async function getData() {
 
-  let edgeMSg = '', nodeMsg = '';
+  let edgeMSg = '', nodeMsg = '', errMsg;
 
   await Promise.all([
     fetch('/api/edge').then(res => res.text()),
@@ -14,10 +14,10 @@ async function getData() {
     nodeMsg = data2
   })
   .catch(() => {
-    console.log('Error loading data')
+    errMsg = 'Error loading data'
   });
 
-  return { edgeMSg, nodeMsg }
+  return { edgeMSg, nodeMsg, errMsg }
 }
 
 export default async function FunctionPage() {
@@ -28,9 +28,9 @@ export default async function FunctionPage() {
       <Nav></Nav>
       <h1>Functions 页面</h1>
       <p>Edge 函数请求：</p>
-      <p>{data.edgeMSg}</p>
+      <p>{data.edgeMSg || data.errMsg}</p>
       <p>Node 函数请求：</p>
-      <p>{data.nodeMsg}</p>
+      <p>{data.nodeMsg || data.errMsg}</p>
     </div>
   );
 }
