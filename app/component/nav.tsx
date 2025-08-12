@@ -8,6 +8,7 @@ export default function Nav() {
       <Link href="./ssr">SSR 页面</Link>
       <Link href="./ssg">SSG 页面</Link>
       <Link href="./isr">ISR 页面</Link>
+      <Link href="./functions">Functions 页面</Link>
     </div>
     )
 }
