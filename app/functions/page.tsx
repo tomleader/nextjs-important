@@ -1,4 +1,6 @@
+
 "use client";
+
 import { useEffect, useState } from 'react';
 import Nav from '../component/nav';
 
@@ -45,17 +47,24 @@ export default function FunctionPage() {
     loadData(); // 调用加载数据函数
   }, []);  // 空依赖数组确保只在组件挂载时执行一次
 
-  // 处理中请求加载状态
-  if (loading) return <div>Loading...</div>;
-
   return (
     <div>
       <Nav />
-      <h1>Functions 页面</h1>
-      <p>Edge 函数请求：</p>
-      <p>{data.edgeMSg || 'No data from Edge'}</p>
-      <p>Node 函数请求：</p>
-      <p>{data.nodeMsg || 'No data from Node'}</p>
+      {loading && (
+        <div className="loading-container">
+          <p>Loading...</p>
+        </div>
+      )}
+
+      {!loading && (
+        <div>
+          <h1>Functions 页面</h1>
+          <p>Edge 函数请求：</p>
+          <p>{data.edgeMSg || 'No data from Edge'}</p>
+          <p>Node 函数请求：</p>
+          <p>{data.nodeMsg || 'No data from Node'}</p>
+        </div>
+      )}
     </div>
   );
 }
