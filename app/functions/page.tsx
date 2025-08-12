@@ -13,8 +13,8 @@ async function getData() {
     edgeMSg = data1
     nodeMsg = data2
   })
-  .catch(() => {
-    errMsg = 'Error loading data'
+  .catch((e) => {
+    errMsg = JSON.stringify(e)
   });
 
   return { edgeMSg, nodeMsg, errMsg }
