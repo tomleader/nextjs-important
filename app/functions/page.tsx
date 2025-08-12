@@ -1,9 +1,7 @@
 
 import Nav from '../component/nav'
 
-async function getData() { 
-  const now = new Date().toISOString();
-  return { now };
+async function getData() {
 
   let edgeMSg = '', nodeMsg = '';
 
