@@ -1,7 +1,7 @@
 
 import Nav from '../component/nav'
 
-async function getData() {
+async function getData() { 
   const now = new Date().toISOString();
   return { now };
 
