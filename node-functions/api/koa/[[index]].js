@@ -45,7 +45,7 @@ router.get('/set-header', (ctx) => {
 
 // 重定向
 router.get('/redirect', (ctx) => {
-  ctx.redirect('/set-header'); // 默认 302
+  ctx.redirect('/api/koa/set-header'); // 默认 302
 });
 
 // 使用路由中间件

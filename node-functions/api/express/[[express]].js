@@ -1,6 +1,9 @@
 import express from "express";
 import path from "path";
 const app = express();
+const timeout = require('connect-timeout');
+
+app.use(timeout('5s')); // 设置全局请求超时 5 秒
 
 // 添加日志中间件
 app.use((req, res, next) => {
@@ -14,6 +17,11 @@ app.get("/", (req, res) => {
   res.json({ message: "Express [express 路由匹配测试] root path" });
 });
 
+// 添加根路由处理
+app.get("/xxx", (req, res) => {
+  res.xxx({ message: "xxxx" });
+});
+
 // 设置响应头
 app.get('/set-header', (req, res) => {
   res.set('X-Custom-Header', 'HelloExpress'); // 设置自定义头
@@ -23,7 +31,7 @@ app.get('/set-header', (req, res) => {
 
 // 重定向
 app.get('/redirect', (req, res) => {
-  res.redirect(302, '/set-header'); // 302 临时重定向到 /set-header
+  res.redirect(302, '/api/express/set-header'); // 302 临时重定向到 /set-header
 });
 
 app.get("/users/:id/:sdasdadad", (req, res) => {
@@ -34,6 +42,13 @@ app.get("/users/:id/:sdasdadad", (req, res) => {
     title: "Test Users API[express 路由匹配测试]",
   });
 });
+
+app.get("/timeout", (req, res) => {
+  setTimeout(()=>{
+    res.json({ message: "Express [express 路由匹配测试] context:" + JSON.stringify(req.context) });
+  },6000)
+  
+})
 
 app.get("/context", (req, res) => {
   setTimeout(()=>{
