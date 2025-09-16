@@ -36,6 +36,17 @@ router.get('/req-headers', async (ctx) => {
   ctx.status = 200;
 });
 
+// 设置响应头
+router.get('/set-header', (ctx) => {
+  ctx.set('X-Custom-Header', 'HelloKoa'); // 设置自定义头
+  ctx.set('Cache-Control', 'no-store');   // 也可以链式设置
+  ctx.body = 'Headers have been set!';
+});
+
+// 重定向
+router.get('/redirect', (ctx) => {
+  ctx.redirect('/set-header'); // 默认 302
+});
 
 // 使用路由中间件
 app.use(router.routes());
