@@ -14,6 +14,18 @@ app.get("/", (req, res) => {
   res.json({ message: "Express [express 路由匹配测试] root path" });
 });
 
+// 设置响应头
+app.get('/set-header', (req, res) => {
+  res.set('X-Custom-Header', 'HelloExpress'); // 设置自定义头
+  res.setHeader('Cache-Control', 'no-store'); // Node 原生方式也可以
+  res.send('Headers have been set!');
+});
+
+// 重定向
+app.get('/redirect', (req, res) => {
+  res.redirect(302, '/set-header'); // 302 临时重定向到 /set-header
+});
+
 app.get("/users/:id/:sdasdadad", (req, res) => {
   const params = req.params.id;
   res.json({
@@ -24,7 +36,10 @@ app.get("/users/:id/:sdasdadad", (req, res) => {
 });
 
 app.get("/context", (req, res) => {
-  res.json({ message: "Express [express 路由匹配测试] context:" + JSON.stringify(req.context) });
+  setTimeout(()=>{
+    res.json({ message: "Express [express 路由匹配测试] context:" + JSON.stringify(req.context) });
+  },35000)
+  
 })
 // 导出处理函数
 export default app;
