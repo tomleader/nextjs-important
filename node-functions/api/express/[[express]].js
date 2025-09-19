@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 const app = express();
 const timeout = require('connect-timeout');
-xxx();
+// xxx();
 app.use(timeout('5s')); // 设置全局请求超时 5 秒
 
 // 添加日志中间件
